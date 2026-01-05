@@ -157,6 +157,7 @@ vim.o.cursorline = true
 
 -- C and C++ options
 vim.opt.expandtab = true
+vim.opt.shiftwidth = 4
 vim.opt.cindent = true
 
 -- Show a highlighted column at 80 characters
