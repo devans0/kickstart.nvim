@@ -7,7 +7,8 @@
 ========         .----------------------.   | === |          ========
 ========         |.-""""""""""""""""""-.|   |-----|          ========
 ========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ======== ========         ||                    ||   | === |          ========
+========         ||   KICKSTART.NVIM   ||   |-----|          ======== 
+========         ||                    ||   | === |          ========
 ========         ||                    ||   |-----|          ========
 ========         ||:Tutor              ||   |:::::|          ========
 ========         |'-..................-'|   |____o|          ========
@@ -83,11 +84,25 @@ I hope you enjoy your Neovim journey,
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
 
+-- Restrict logging to warnings and errors to avoid large log file sizes
+vim.lsp.log.set_level 'warn'
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+
+-- Filetype Settings
+-- Run before plugins to ensure correct detection
+vim.filetype.add {
+  extension = {
+    h = 'c',
+    hh = 'cpp',
+    hpp = 'cpp',
+    H = 'cpp',
+  },
+}
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
@@ -159,6 +174,8 @@ vim.o.cursorline = true
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 4
 vim.opt.cindent = true
+vim.opt.cino = 'g0,:0,b1,t0,(0'
+vim.g.c_syntax_for_h = 1
 
 -- Show a highlighted column at 80 characters
 vim.opt.colorcolumn = { 80 }
@@ -651,7 +668,11 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- C/C++
-        clangd = {},
+        clangd = {
+          cmd = {
+            'clangd',
+          },
+        },
         -- Lua
         lua_ls = {
           -- cmd = { ... },
@@ -667,17 +688,12 @@ require('lazy').setup({
             },
           },
         },
-        -- gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
-        -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-        --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
+        jsonls = {
+          filetypes = { 'json', 'jsonc' },
+        },
+        arduino_language_server = {
+          filetypes = { 'ino' },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -696,6 +712,8 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'clangd',
+        'jsonls',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -724,7 +742,7 @@ require('lazy').setup({
       {
         '<leader>f',
         function()
-          require('conform').format { async = true, lsp_format = 'fallback' }
+          require('conform').format { async = true, lsp_format = 'never' }
         end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -759,9 +777,11 @@ require('lazy').setup({
       formatters = {
         clang_format = {
           command = 'clang-format',
-          append_args = function()
-            return { '--style=file:/home/dom/.config/clangd/clang-format.yaml' }
-          end,
+          args = {
+            '--style=file',
+            '--assume-filename',
+            '$FILENAME',
+          },
         },
       },
     },
@@ -915,6 +935,7 @@ require('lazy').setup({
       --@diagnostic disable-next-line: missing-fields
       vim.g.everforest_enable_italic = false
       vim.g.everforest_background = 'hard'
+      vim.g.everforest_transparent_background = 1
       vim.g.everforest_disable_italic_comment = 1 -- removes italic comments
       vim.cmd.colorscheme 'everforest'
     end,
@@ -977,7 +998,7 @@ require('lazy').setup({
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
         additional_vim_regex_highlighting = { 'ruby' },
       },
-      indent = { enable = true, disable = { 'ruby' } },
+      indent = { enable = true, disable = { 'c', 'cpp', 'ruby' } },
     },
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
@@ -1006,7 +1027,7 @@ require('lazy').setup({
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
